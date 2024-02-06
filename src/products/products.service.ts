@@ -9,9 +9,9 @@ import { CreateProductDto } from './dto/create-product.dto';
 import { UpdateProductDto } from './dto/update-product.dto';
 import { InjectRepository } from '@nestjs/typeorm';
 import { Repository } from 'typeorm';
-import { Product } from './entities/product.entity';
 import { PaginationDto } from '../common/dtos/pagination.dto';
 import { validate as isUUID } from 'uuid';
+import { Product, ProductImage } from './entities';
 
 @Injectable()
 export class ProductsService {
@@ -19,12 +19,20 @@ export class ProductsService {
   constructor(
     @InjectRepository(Product)
     private readonly productRepository: Repository<Product>,
+    @InjectRepository(ProductImage)
+    private readonly productImageRepository: Repository<ProductImage>,
   ) {}
   async create(createProductDto: CreateProductDto) {
     try {
-      const product = this.productRepository.create(createProductDto); // Lo graba en memoria
+      const { images = [], ...productDetails } = createProductDto;
+      const product = this.productRepository.create({
+        ...productDetails,
+        images: images.map((image) =>
+          this.productImageRepository.create({ url: image }),
+        ),
+      }); // Lo graba en memoria
       await this.productRepository.save(product); // Lo graba en la base de datos
-      return product;
+      return { ...product, images };
     } catch (error) {
       this.handleDBExceptions(error);
     }
@@ -33,11 +41,18 @@ export class ProductsService {
   //TODO: paginar
   async findAll(paginationDto: PaginationDto) {
     const { limit = 10, offset = 0 } = paginationDto;
-    return this.productRepository.find({
+    const products = await this.productRepository.find({
       take: limit,
       skip: offset,
       //TODO: relaciones
+      relations: {
+        images: true,
+      },
     });
+    return products.map(({ images, ...rest }) => ({
+      ...rest,
+      images: images.map((img) => img.url),
+    }));
   }
 
   async findOne(term: string) {
@@ -45,12 +60,13 @@ export class ProductsService {
     if (isUUID(term)) {
       product = await this.productRepository.findOneBy({ id: term });
     } else {
-      const query = this.productRepository.createQueryBuilder();
+      const query = this.productRepository.createQueryBuilder('prod');
       product = await query
         .where('UPPER(title) =:title or slug =:slug ', {
           title: term.toUpperCase(),
           slug: term.toLowerCase(),
         })
+        .leftJoinAndSelect('prod.images', 'prodImages')
         .getOne();
     }
     if (!product)
@@ -58,11 +74,20 @@ export class ProductsService {
     return product;
   }
 
+  async finOnePlain(term: string) {
+    const { images, ...rest } = await this.findOne(term);
+    return {
+      ...rest,
+      images: images.map((img) => img.url),
+    };
+  }
+
   async update(id: string, updateProductDto: UpdateProductDto) {
     // Busca un producto por su id y setea los valores que vienen en el dto
     const product = await this.productRepository.preload({
       id,
       ...updateProductDto,
+      images: [],
     });
     if (!product)
       throw new NotFoundException(

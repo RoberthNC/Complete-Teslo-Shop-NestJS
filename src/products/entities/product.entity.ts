@@ -3,8 +3,10 @@ import {
   BeforeUpdate,
   Column,
   Entity,
+  OneToMany,
   PrimaryGeneratedColumn,
 } from 'typeorm';
+import { ProductImage } from '.';
 
 @Entity()
 export class Product {
@@ -51,7 +53,13 @@ export class Product {
     default: [],
   })
   tags: string[];
-  // images
+
+  @OneToMany(
+    () => ProductImage, // TODO: retorna la clase con la que está relacionada
+    (productImage) => productImage.product, // TODO: la instancia de la clase ProductImage hace referencia al atributo (".product") de product-image.entity.ts para definir la relación inversa
+    { cascade: true, eager: true }, // Eliminación en cascada - tabla independiente
+  )
+  images?: ProductImage[];
 
   @BeforeInsert()
   chekcSlugInsert() {
