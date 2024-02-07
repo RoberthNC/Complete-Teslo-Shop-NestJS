@@ -8,5 +8,6 @@ import { Product, ProductImage } from './entities';
   controllers: [ProductsController],
   providers: [ProductsService],
   imports: [TypeOrmModule.forFeature([Product, ProductImage])], // Importamos la Entity para que se sincronize con la base de datos
+  exports: [ProductsService],
 })
 export class ProductsModule {}
