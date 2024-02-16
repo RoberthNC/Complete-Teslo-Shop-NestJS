@@ -1,8 +1,10 @@
+import { Product } from 'src/products/entities';
 import {
   BeforeInsert,
   BeforeUpdate,
   Column,
   Entity,
+  OneToMany,
   PrimaryGeneratedColumn,
 } from 'typeorm';
 
@@ -34,6 +36,12 @@ export class Auth {
     default: ['user'], // Valor por defecto
   })
   roles: string[];
+
+  @OneToMany(
+    () => Product, //* TABLA A LA QUE QUIERO APUNTAR
+    (product) => product.user, //* INSTANCIA DE LA TABLA CON LA CUAL ME ESTOY RELACIONANDO
+  )
+  product: Product;
 
   @BeforeInsert()
   checkFieldBeforeInsert() {

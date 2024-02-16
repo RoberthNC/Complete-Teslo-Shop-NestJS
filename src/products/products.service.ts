@@ -11,6 +11,7 @@ import { DataSource, Repository } from 'typeorm';
 import { PaginationDto } from '../common/dtos/pagination.dto';
 import { validate as isUUID } from 'uuid';
 import { Product, ProductImage } from './entities';
+import { Auth } from 'src/auth/entities/auth.entity';
 
 @Injectable()
 export class ProductsService {
@@ -22,7 +23,7 @@ export class ProductsService {
     private readonly productImageRepository: Repository<ProductImage>,
     private readonly dataSource: DataSource, // Tiene la misma configuración que la bd
   ) {}
-  async create(createProductDto: CreateProductDto) {
+  async create(createProductDto: CreateProductDto, user: Auth) {
     try {
       const { images = [], ...productDetails } = createProductDto;
       const product = this.productRepository.create({
@@ -30,6 +31,7 @@ export class ProductsService {
         images: images.map((image) =>
           this.productImageRepository.create({ url: image }),
         ),
+        user,
       }); // Lo graba en memoria
       await this.productRepository.save(product); // Lo graba en la base de datos
       return { ...product, images };
@@ -82,7 +84,7 @@ export class ProductsService {
     };
   }
 
-  async update(id: string, updateProductDto: UpdateProductDto) {
+  async update(id: string, updateProductDto: UpdateProductDto, user: Auth) {
     const { images, ...toUpdate } = updateProductDto;
     // Busca un producto por su id y setea los valores que vienen en el dto
     const product = await this.productRepository.preload({
@@ -104,6 +106,7 @@ export class ProductsService {
           this.productImageRepository.create({ url: img }),
         );
       }
+      product.user = user;
       await queryRunner.manager.save(product); // *INTENTA* grabar en la base de datos cuando usamos el *manager*
       // await this.productRepository.save(product); // Se guarda la actualización en la base de datos
       await queryRunner.commitTransaction(); // Ejecuta la transacción guardando en la base de datos

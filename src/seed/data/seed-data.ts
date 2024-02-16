@@ -1,3 +1,5 @@
+import * as bcrypt from 'bcrypt';
+
 interface SeedProduct {
   description: string;
   images: string[];
@@ -14,11 +16,33 @@ interface SeedProduct {
 type ValidSizes = 'XS' | 'S' | 'M' | 'L' | 'XL' | 'XXL' | 'XXXL';
 type ValidTypes = 'shirts' | 'pants' | 'hoodies' | 'hats';
 
+interface SeedUser {
+  email: string;
+  fullname: string;
+  password: string;
+  roles: string[];
+}
+
 interface SeedData {
+  users: SeedUser[];
   products: SeedProduct[];
 }
 
 export const initialData: SeedData = {
+  users: [
+    {
+      email: 'test1@gmail.com',
+      fullname: 'test1',
+      password: bcrypt.hashSync('Abc123', 10),
+      roles: ['admin'],
+    },
+    {
+      email: 'test2@gmail.com',
+      fullname: 'test2',
+      password: bcrypt.hashSync('Abc123', 10),
+      roles: ['admin', 'super'],
+    },
+  ],
   products: [
     {
       description:

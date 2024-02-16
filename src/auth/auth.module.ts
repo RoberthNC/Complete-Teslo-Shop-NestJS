@@ -18,8 +18,8 @@ import { JwtStrategy } from './strategies/jwt.strategy';
     JwtModule.registerAsync({
       imports: [ConfigModule], // Para módulos
       inject: [ConfigService], // Para servicios
+      // Inyección de dependencias desde una función
       useFactory: (configService: ConfigService) => {
-        // Inyección de dependencias desde una función
         return {
           secret: configService.get('JWT_SECRET'),
           signOptions: {
