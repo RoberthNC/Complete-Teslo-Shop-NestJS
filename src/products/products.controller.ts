@@ -16,13 +16,23 @@ import { AuthDecorator } from '../auth/decorators';
 import { ValidRoles } from '../auth/interfaces';
 import { GetUser } from '../auth/decorators/get-user.decorator';
 import { Auth } from '../auth/entities/auth.entity';
+import { ApiResponse, ApiTags } from '@nestjs/swagger';
+import { Product } from './entities';
 
+@ApiTags('Products')
 @Controller('products')
 export class ProductsController {
   constructor(private readonly productsService: ProductsService) {}
 
   @Post()
   @AuthDecorator()
+  @ApiResponse({
+    status: 201,
+    description: 'El producto fue creado',
+    type: Product,
+  })
+  @ApiResponse({ status: 400, description: 'Error de petición' })
+  @ApiResponse({ status: 403, description: 'El token no es válido' })
   create(@Body() createProductDto: CreateProductDto, @GetUser() user: Auth) {
     return this.productsService.create(createProductDto, user);
   }
